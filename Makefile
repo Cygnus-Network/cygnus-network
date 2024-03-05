@@ -6,13 +6,13 @@ TMVERSION := $(shell go list -m github.com/tendermint/tendermint | sed 's:.* ::'
 COMMIT := $(shell git log -1 --format='%H')
 LEDGER_ENABLED ?= true
 BINDIR ?= $(GOPATH)/bin
-EVMOS_BINARY = evmosd
-EVMOS_DIR = evmos
+EVMOS_BINARY = cygnusd
+EVMOS_DIR = cygnus
 BUILDDIR ?= $(CURDIR)/build
 HTTPS_GIT := https://github.com/evmos/evmos.git
 DOCKER := $(shell which docker)
 NAMESPACE := tharsishq
-PROJECT := evmos
+PROJECT := cygnus
 DOCKER_IMAGE := $(NAMESPACE)/$(PROJECT)
 COMMIT_HASH := $(shell git rev-parse --short=7 HEAD)
 DOCKER_TAG := $(COMMIT_HASH)
@@ -61,7 +61,7 @@ build_tags := $(strip $(build_tags))
 
 # process linker flags
 
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=evmos \
+ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=cygnus \
           -X github.com/cosmos/cosmos-sdk/version.AppName=$(EVMOS_BINARY) \
           -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
           -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
@@ -133,7 +133,7 @@ build-reproducible: go.sum
 	$(DOCKER) rm latest-build || true
 	$(DOCKER) run --volume=$(CURDIR):/sources:ro \
         --env TARGET_PLATFORMS='linux/amd64' \
-        --env APP=evmosd \
+        --env APP=cygnusd \
         --env VERSION=$(VERSION) \
         --env COMMIT=$(COMMIT) \
         --env CGO_ENABLED=1 \
@@ -148,12 +148,12 @@ build-docker:
 	$(DOCKER) tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
 	# docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${COMMIT_HASH}
 	# update old container
-	$(DOCKER) rm evmos || true
+	$(DOCKER) rm cygnus || true
 	# create a new container from the latest image
-	$(DOCKER) create --name evmos -t -i ${DOCKER_IMAGE}:latest evmos
+	$(DOCKER) create --name cygnus -t -i ${DOCKER_IMAGE}:latest cygnus
 	# move the binaries to the ./build directory
 	mkdir -p ./build/
-	$(DOCKER) cp evmos:/usr/bin/evmosd ./build/
+	$(DOCKER) cp cygnus:/usr/bin/cygnusd ./build/
 
 push-docker: build-docker
 	$(DOCKER) push ${DOCKER_IMAGE}:${DOCKER_TAG}
@@ -313,7 +313,7 @@ test-e2e:
 		make build-docker; \
 	fi
 	@mkdir -p ./build
-	@rm -rf build/.evmosd
+	@rm -rf build/.cygnusd
 	@INITIAL_VERSION=$(INITIAL_VERSION) TARGET_VERSION=$(TARGET_VERSION) \
 	E2E_SKIP_CLEANUP=$(E2E_SKIP_CLEANUP) MOUNT_PATH=$(MOUNT_PATH) CHAIN_ID=$(CHAIN_ID) \
 	go test -v ./tests/e2e -run ^TestIntegrationTestSuite$
@@ -489,7 +489,7 @@ localnet-build:
 
 # Start a 4-node testnet locally
 localnet-start: localnet-stop localnet-build
-	@if ! [ -f build/node0/$(EVMOS_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/evmos:Z evmos/node "./evmosd testnet init-files --v 4 -o /evmos --keyring-backend=test --starting-ip-address 192.167.10.2"; fi
+	@if ! [ -f build/node0/$(EVMOS_BINARY)/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/cygnus:Z cygnus/node "./cygnusd testnet init-files --v 4 -o /cygnus --keyring-backend=test --starting-ip-address 192.167.10.2"; fi
 	docker-compose up -d
 
 # Stop testnet
@@ -505,15 +505,15 @@ localnet-clean:
 localnet-unsafe-reset:
 	docker-compose down
 ifeq ($(OS),Windows_NT)
-	@docker run --rm -v $(CURDIR)\build\node0\evmosd:/evmos\Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
-	@docker run --rm -v $(CURDIR)\build\node1\evmosd:/evmos\Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
-	@docker run --rm -v $(CURDIR)\build\node2\evmosd:/evmos\Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
-	@docker run --rm -v $(CURDIR)\build\node3\evmosd:/evmos\Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
+	@docker run --rm -v $(CURDIR)\build\node0\cygnusd:/cygnus\Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
+	@docker run --rm -v $(CURDIR)\build\node1\cygnusd:/cygnus\Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
+	@docker run --rm -v $(CURDIR)\build\node2\cygnusd:/cygnus\Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
+	@docker run --rm -v $(CURDIR)\build\node3\cygnusd:/cygnus\Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
 else
-	@docker run --rm -v $(CURDIR)/build/node0/evmosd:/evmos:Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
-	@docker run --rm -v $(CURDIR)/build/node1/evmosd:/evmos:Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
-	@docker run --rm -v $(CURDIR)/build/node2/evmosd:/evmos:Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
-	@docker run --rm -v $(CURDIR)/build/node3/evmosd:/evmos:Z evmos/node "./evmosd tendermint unsafe-reset-all --home=/evmos"
+	@docker run --rm -v $(CURDIR)/build/node0/cygnusd:/cygnus:Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
+	@docker run --rm -v $(CURDIR)/build/node1/cygnusd:/cygnus:Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
+	@docker run --rm -v $(CURDIR)/build/node2/cygnusd:/cygnus:Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
+	@docker run --rm -v $(CURDIR)/build/node3/cygnusd:/cygnus:Z cygnus/node "./cygnusd tendermint unsafe-reset-all --home=/cygnus"
 endif
 
 # Clean testnet

@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cast"
@@ -50,6 +51,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	"github.com/ethereum/go-ethereum/common"
 
 	evmosclient "github.com/evmos/evmos/v12/client"
 	"github.com/evmos/evmos/v12/client/debug"
@@ -65,10 +67,42 @@ import (
 )
 
 const (
-	EnvPrefix = "EVMOS"
+	EnvPrefix = "CYGNUS"
 )
 
-// NewRootCmd creates a new root command for evmosd. It is called once in the
+func addressConverterCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "address-converter [address]",
+		Short: "Convert a cygnus address to evm address or vice versa",
+		Long:  `Convert a cygnus address to evm address or vice versa`,
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			inputAddress := args[0]
+			if strings.HasPrefix(inputAddress, "0x") {
+				cascadiaAddr, err := sdk.AccAddressFromHexUnsafe(inputAddress[2:])
+				if err != nil {
+					return fmt.Errorf("Invalid evm address: %w", err)
+				}
+				fmt.Println(cascadiaAddr.String())
+				return nil
+			}
+
+			addr, err := sdk.AccAddressFromBech32(inputAddress)
+
+			if err != nil {
+				return fmt.Errorf("Invalid cygnus address: %w", err)
+			}
+
+			evmAddr := common.BytesToAddress(addr)
+			fmt.Println(evmAddr)
+			return nil
+		},
+	}
+
+	return cmd
+}
+
+// NewRootCmd creates a new root command for cygnusd. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
@@ -89,7 +123,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	rootCmd := &cobra.Command{
 		Use:   app.Name,
-		Short: "Evmos Daemon",
+		Short: "Cygnus Daemon",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
@@ -158,6 +192,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	// add rosetta
 	rootCmd.AddCommand(sdkserver.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
+	rootCmd.AddCommand(addressConverterCommand())
 
 	return rootCmd, encodingConfig
 }

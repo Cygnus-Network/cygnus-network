@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/evmos/evmos/v12/app"
-	evmosd "github.com/evmos/evmos/v12/cmd/evmosd"
+	cygnusd "github.com/evmos/evmos/v12/cmd/cygnusd"
 	"github.com/evmos/evmos/v12/utils"
 )
 
 func TestInitCmd(t *testing.T) {
-	rootCmd, _ := evmosd.NewRootCmd()
+	rootCmd, _ := cygnusd.NewRootCmd()
 	rootCmd.SetArgs([]string{
 		"init",       // Test the init cmd
 		"evmos-test", // Moniker
@@ -23,12 +23,12 @@ func TestInitCmd(t *testing.T) {
 		fmt.Sprintf("--%s=%s", flags.FlagChainID, utils.TestnetChainID+"-1"),
 	})
 
-	err := svrcmd.Execute(rootCmd, "evmosd", app.DefaultNodeHome)
+	err := svrcmd.Execute(rootCmd, "cygnusd", app.DefaultNodeHome)
 	require.NoError(t, err)
 }
 
 func TestAddKeyLedgerCmd(t *testing.T) {
-	rootCmd, _ := evmosd.NewRootCmd()
+	rootCmd, _ := cygnusd.NewRootCmd()
 	rootCmd.SetArgs([]string{
 		"keys",
 		"add",
@@ -36,6 +36,6 @@ func TestAddKeyLedgerCmd(t *testing.T) {
 		fmt.Sprintf("--%s", flags.FlagUseLedger),
 	})
 
-	err := svrcmd.Execute(rootCmd, "EVMOSD", app.DefaultNodeHome)
+	err := svrcmd.Execute(rootCmd, "cygnusd", app.DefaultNodeHome)
 	require.Error(t, err)
 }
